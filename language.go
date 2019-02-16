@@ -9,9 +9,10 @@ import (
 
 // Language is an expression language
 type Language struct {
-	prefixes        map[interface{}]prefix
-	operators       map[string]operator
-	operatorSymbols map[rune]struct{}
+	prefixes          map[interface{}]prefix
+	operators         map[string]operator
+	operatorSymbols   map[rune]struct{}
+	missingVarHandler func([]string, int) (interface{}, error)
 }
 
 // NewLanguage returns the union of given Languages as new Language.
@@ -40,9 +41,14 @@ func newLanguage() Language {
 	}
 }
 
+func (l *Language) MissingVarHandler(fn func([]string, int) (interface{}, error)) {
+	l.missingVarHandler = fn
+}
+
 // NewEvaluable returns an Evaluable for given expression in the specified language
 func (l Language) NewEvaluable(expression string) (Evaluable, error) {
 	p := newParser(expression, l)
+	p.MissingVarHandler(l.missingVarHandler)
 
 	eval, err := p.ParseExpression(context.Background())
 

@@ -12,8 +12,9 @@ import (
 type Parser struct {
 	scanner scanner.Scanner
 	Language
-	lastScan   rune
-	camouflage error
+	lastScan     rune
+	camouflage   error
+	missingVarFn func(keys []string, index int) (interface{}, error)
 }
 
 func newParser(expression string, l Language) *Parser {
@@ -36,6 +37,10 @@ func (p *Parser) Scan() rune {
 	p.camouflage = nil
 	p.lastScan = p.scanner.Scan()
 	return p.lastScan
+}
+
+func (p *Parser) MissingVarHandler(fn func([]string, int) (interface{}, error)) {
+	p.missingVarFn = fn
 }
 
 func (p *Parser) isCamouflaged() bool {

@@ -63,6 +63,15 @@ func (e Evaluable) EvalString(c context.Context, parameter interface{}) (string,
 	return fmt.Sprintf("%v", o), nil
 }
 
+//EvalInterface evaluates given parameter to an interface{}
+func (e Evaluable) EvalInterface(c context.Context, parameter interface{}) (interface{}, error) {
+	o, err := e(c, parameter)
+	if err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
 //Const Evaluable represents given constant
 func (*Parser) Const(value interface{}) Evaluable {
 	return constant(value)
@@ -79,11 +88,7 @@ func constant(value interface{}) Evaluable {
 //	map[string]interface{},
 // 	[]interface{} and
 //	struct fields
-func (*Parser) Var(path ...Evaluable) Evaluable {
-	return variable(path...)
-}
-
-func variable(path ...Evaluable) Evaluable {
+func (p *Parser) Var(path ...Evaluable) Evaluable {
 	return func(c context.Context, v interface{}) (interface{}, error) {
 		keys := make([]string, len(path))
 		for i, p := range path {
@@ -94,13 +99,16 @@ func variable(path ...Evaluable) Evaluable {
 			keys[i] = k
 		}
 		for i, k := range keys {
+			var exists bool
 			switch o := v.(type) {
 			case map[interface{}]interface{}:
-				v = o[k]
-				continue
+				if v, exists = o[k]; exists {
+					continue
+				}
 			case map[string]interface{}:
-				v = o[k]
-				continue
+				if v, exists = o[k]; exists {
+					continue
+				}
 			case []interface{}:
 				if i, err := strconv.Atoi(k); err == nil && i >= 0 && len(o) > i {
 					v = o[i]
@@ -133,6 +141,11 @@ func variable(path ...Evaluable) Evaluable {
 					continue
 				}
 			}
+
+			if p.missingVarFn != nil {
+				return p.missingVarFn(keys, i)
+			}
+
 			return nil, fmt.Errorf("unknown parameter %s", strings.Join(keys[:i+1], "."))
 		}
 		return v, nil
