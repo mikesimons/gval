@@ -99,14 +99,15 @@ func (p *Parser) Var(path ...Evaluable) Evaluable {
 			keys[i] = k
 		}
 		for i, k := range keys {
+			requireLastKey := (p.missingVarHandler != nil)
 			var exists bool
 			switch o := v.(type) {
 			case map[interface{}]interface{}:
-				if v, exists = o[k]; exists {
+				if v, exists = o[k]; !requireLastKey || exists {
 					continue
 				}
 			case map[string]interface{}:
-				if v, exists = o[k]; exists {
+				if v, exists = o[k]; !requireLastKey || exists {
 					continue
 				}
 			case []interface{}:
