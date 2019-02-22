@@ -20,7 +20,9 @@ func newParser(expression string, l Language) *Parser {
 	sc := scanner.Scanner{}
 	sc.Init(strings.NewReader(expression))
 	sc.Error = func(*scanner.Scanner, string) { return }
-	sc.IsIdentRune = func(r rune, pos int) bool { return unicode.IsLetter(r) || r == '_' || (pos > 0 && unicode.IsDigit(r)) }
+	sc.IsIdentRune = func(r rune, pos int) bool {
+		return r == '@' || r == '$' || unicode.IsLetter(r) || r == '_' || (pos > 0 && unicode.IsDigit(r))
+	}
 	sc.Filename = expression + "\t"
 	return &Parser{scanner: sc, Language: l}
 }
